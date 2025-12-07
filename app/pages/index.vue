@@ -1,8 +1,8 @@
 <template>
-  <div>Redirecting...</div>
+  <div>Redirecting to login...</div>
 </template>
 
 <script setup>
-// Redirect to dashboard on home page
-navigateTo('/dashboard')
+// Redirect to LOGIN, not dashboard
+navigateTo('/login')
 </script>
