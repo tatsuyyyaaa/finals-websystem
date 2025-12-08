@@ -6,10 +6,6 @@
       </template>
 
       <v-app-bar-title>Web Management System</v-app-bar-title>
-      
-      <template v-slot:append>
-        <v-btn icon="mdi-logout" variant="text" @click="logout" title="Logout"></v-btn>
-      </template>
     </v-app-bar>
 
     <!-- Full Sidebar -->
@@ -59,68 +55,12 @@
         ></v-list-item>
       </v-list>
 
-      <!-- Minimize button -->
-      <template v-slot:append>
-        <div class="pa-2">
-          <v-btn 
-            block 
-            variant="outlined" 
-            color="white"
-            @click="minimizeSidebar"
-            prepend-icon="mdi-chevron-left"
-          >
-            Minimize
-          </v-btn>
-        </div>
-      </template>
-    </v-navigation-drawer>
+      <v-divider class="my-2"></v-divider>
 
-    <!-- Minimized Sidebar - ONLY ICONS -->
-    <v-navigation-drawer 
-      v-model="sidebarMinimized" 
-      temporary 
-      color="blue" 
-      location="left"
-      width="70"
-      class="minimized-sidebar"
-      v-if="!sidebarOpen && sidebarMinimized"
-    >
-      <!-- Just icons, no extra elements -->
-      <div class="icon-container">
-        <v-btn 
-          icon 
-          to="/dashboard" 
-          class="sidebar-icon"
-          @click="sidebarMinimized = false"
-        >
-          <v-icon color="white">mdi-view-dashboard</v-icon>
-        </v-btn>
-        
-        <v-btn 
-          icon 
-          to="/items" 
-          class="sidebar-icon"
-          @click="sidebarMinimized = false"
-        >
-          <v-icon color="white">mdi-package-variant</v-icon>
-        </v-btn>
-        
-        <v-btn 
-          icon 
-          to="/members" 
-          class="sidebar-icon"
-          @click="sidebarMinimized = false"
-        >
-          <v-icon color="white">mdi-account-group</v-icon>
-        </v-btn>
-        
-        <v-btn 
-          icon 
-          to="/transactions" 
-          class="sidebar-icon"
-          @click="sidebarMinimized = false"
-        >
-          <v-icon color="white">mdi-cash-multiple</v-icon>
+      <!-- Logout Button Moved Here -->
+      <div class="pa-2">
+        <v-btn block color="white" variant="outlined" prepend-icon="mdi-logout" @click="logout">
+          Logout
         </v-btn>
       </div>
     </v-navigation-drawer>
@@ -137,16 +77,9 @@
 import { ref } from 'vue'
 
 const sidebarOpen = ref(false)
-const sidebarMinimized = ref(false)
 
 const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value
-  sidebarMinimized.value = false
-}
-
-const minimizeSidebar = () => {
-  sidebarOpen.value = false
-  sidebarMinimized.value = true
 }
 
 const logout = () => {
@@ -164,36 +97,5 @@ const logout = () => {
 /* Make icons white */
 .v-navigation-drawer .v-icon {
   color: white !important;
-}
-
-/* Minimized sidebar - ONLY ICONS */
-.minimized-sidebar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.minimized-sidebar .icon-container {
-  display: flex;
-  flex-direction: column;
-  gap: 24px; /* Space between icons */
-}
-
-.minimized-sidebar .sidebar-icon {
-  width: 40px;
-  height: 40px;
-}
-
-.minimized-sidebar .sidebar-icon .v-icon {
-  font-size: 24px;
-}
-
-/* App content margin when sidebar is minimized */
-.v-main {
-  transition: margin-left 0.3s;
-}
-
-.v-main:has(.minimized-sidebar) {
-  margin-left: 70px;
 }
 </style>
