@@ -100,16 +100,16 @@
 </template>
 
 <script setup>
+const config = useRuntimeConfig();
+
 const items = ref([]);
 const loading = ref(false);
 const creating = ref(false);
 const updating = ref(false);
 
-
 const createItemDialog = ref(false);
 const editItemDialog = ref(false);
 const viewItemDialog = ref(false);
-
 
 const createForm = ref(null);
 const editForm = ref(null);
@@ -118,7 +118,6 @@ const itemPrice = ref("");
 const itemQuantity = ref("");
 const editItemData = ref({});
 const viewItemData = ref({});
-
 
 const snackbar = ref(false);
 const snackbarColor = ref("");
@@ -132,13 +131,19 @@ const headers = [
   { title: "Actions", key: "actions", sortable: false },
 ];
 
-
 const getItems = async () => {
   loading.value = true;
   try {
-    const res = await $fetch("http://localhost:1337/api/items");
-    if (res) {
-      items.value = res.data;
+    const res = await $fetch(`${config.public.baseUrl}/api/items`);
+    if (res && res.data) {
+      items.value = res.data.map(item => ({
+        id: item.id,
+        documentId: item.documentId,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        createdAt: item.createdAt
+      }));
     }
   } catch (err) {
     console.log("Error fetching items:", err);
@@ -147,7 +152,6 @@ const getItems = async () => {
     loading.value = false;
   }
 };
-
 
 const createItem = async () => {
   if (!createForm.value) return;
@@ -165,7 +169,7 @@ const createItem = async () => {
       },
     };
     
-    const res = await $fetch("http://localhost:1337/api/items", {
+    const res = await $fetch(`${config.public.baseUrl}/api/items`, {
       method: "POST",
       body: payload,
     });
@@ -183,18 +187,15 @@ const createItem = async () => {
   }
 };
 
-
 const viewItem = (item) => {
   viewItemData.value = { ...item };
   viewItemDialog.value = true;
 };
 
-
 const editItem = (item) => {
   editItemData.value = { ...item };
   editItemDialog.value = true;
 };
-
 
 const updateItem = async () => {
   if (!editForm.value) return;
@@ -204,6 +205,8 @@ const updateItem = async () => {
   
   updating.value = true;
   try {
+    const itemId = editItemData.value.documentId || editItemData.value.id;
+    
     let payload = {
       data: {
         name: editItemData.value.name,
@@ -212,7 +215,7 @@ const updateItem = async () => {
       },
     };
     
-    const res = await $fetch(`http://localhost:1337/api/items/${editItemData.value.id}`, {
+    const res = await $fetch(`${config.public.baseUrl}/api/items/${itemId}`, {
       method: "PUT",
       body: payload,
     });
@@ -229,13 +232,14 @@ const updateItem = async () => {
   }
 };
 
-
 const deleteItem = async (item) => {
   if (!confirm(`Delete ${item.name}?`)) return;
   
   try {
+    const itemId = item.documentId || item.id;
+    
     const res = await $fetch(
-      `http://localhost:1337/api/items/${item.id}`,
+      `${config.public.baseUrl}/api/items/${itemId}`,
       {
         method: "DELETE",
       }
@@ -249,7 +253,6 @@ const deleteItem = async (item) => {
   }
 };
 
-// Reset forms
 const resetCreateForm = () => {
   itemName.value = "";
   itemPrice.value = "";

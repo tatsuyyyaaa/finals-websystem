@@ -38,7 +38,7 @@
           <v-form class="pt-5 pb-4" ref="createForm">
             <v-select v-model="transactionType" :items="types" label="Type" required></v-select>
             <v-text-field v-model="transactionAmount" label="Amount" type="number" required></v-text-field>
-            <v-select v-model="transactionStatus" :items="statuses" label="Status" required></v-select>
+            <v-select v-model="transactionStat" :items="stats" label="Status" required></v-select>
 
             <v-btn @click="createTransaction()" color="green" block :loading="creating">Create</v-btn>
           </v-form>
@@ -56,7 +56,7 @@
           <v-form class="pt-5 pb-4" ref="editForm">
             <v-select v-model="editTransactionData.type" :items="types" label="Type" required></v-select>
             <v-text-field v-model="editTransactionData.amount" label="Amount" type="number" required></v-text-field>
-            <v-select v-model="editTransactionData.status" :items="statuses" label="Status" required></v-select>
+            <v-select v-model="editTransactionData.stat" :items="stats" label="Status" required></v-select>
 
             <v-btn @click="updateTransaction()" color="blue" block :loading="updating">Update</v-btn>
           </v-form>
@@ -82,7 +82,7 @@
             </v-list-item>
             <v-list-item>
               <v-list-item-title>Status</v-list-item-title>
-              <v-list-item-subtitle>{{ viewTransactionData.status }}</v-list-item-subtitle>
+              <v-list-item-subtitle>{{ viewTransactionData.stat }}</v-list-item-subtitle>
             </v-list-item>
             <v-list-item>
               <v-list-item-title>Date</v-list-item-title>
@@ -104,6 +104,8 @@
 </template>
 
 <script setup>
+const config = useRuntimeConfig();
+
 const transactions = ref([]);
 const loading = ref(false);
 const creating = ref(false);
@@ -119,7 +121,7 @@ const createForm = ref(null);
 const editForm = ref(null);
 const transactionType = ref("sale");
 const transactionAmount = ref("");
-const transactionStatus = ref("pending");
+const transactionStat = ref("pending");
 const editTransactionData = ref({});
 const viewTransactionData = ref({});
 
@@ -129,23 +131,32 @@ const snackbarColor = ref("");
 const snackbarText = ref("");
 
 const types = ["sale", "purchase", "return", "refund"];
-const statuses = ["pending", "completed", "cancelled"];
+const stats = ["pending", "completed", "cancelled"];
 const headers = [
   { title: "Type", key: "type" },
   { title: "Amount", key: "amount" },
-  { title: "Status", key: "status" },
+  { title: "Status", key: "stat" },
   { title: "Date", key: "date" },
   { title: "Created At", key: "createdAt" },
   { title: "Actions", key: "actions", sortable: false },
 ];
 
-// GET ALL TRANSACTIONS
+// GET ALL TRANSACTIONS - UPDATED
 const getTransactions = async () => {
   loading.value = true;
   try {
-    const res = await $fetch("http://localhost:1337/api/transactions");
-    if (res) {
-      transactions.value = res.data;
+    const res = await $fetch(`${config.public.baseUrl}/api/transactions`);
+    if (res && res.data) {
+      // Transform Strapi response to flat objects
+      transactions.value = res.data.map(transaction => ({
+        id: transaction.id,
+        documentId: transaction.documentId,
+        type: transaction.type,
+        amount: transaction.amount,
+        stat: transaction.stat,
+        date: transaction.date,
+        createdAt: transaction.createdAt
+      }));
     }
   } catch (err) {
     console.log("Error fetching transactions:", err);
@@ -168,12 +179,12 @@ const createTransaction = async () => {
       data: {
         type: transactionType.value,
         amount: transactionAmount.value,
-        status: transactionStatus.value,
+        stat: transactionStat.value,
         date: new Date().toISOString().split('T')[0],
       },
     };
     
-    const res = await $fetch("http://localhost:1337/api/transactions", {
+    const res = await $fetch(`${config.public.baseUrl}/api/transactions`, {
       method: "POST",
       body: payload,
     });
@@ -203,7 +214,7 @@ const editTransaction = (transaction) => {
   editTransactionDialog.value = true;
 };
 
-// UPDATE TRANSACTION
+// UPDATE TRANSACTION - UPDATED
 const updateTransaction = async () => {
   if (!editForm.value) return;
   
@@ -212,15 +223,17 @@ const updateTransaction = async () => {
   
   updating.value = true;
   try {
+    const transactionId = editTransactionData.value.documentId || editTransactionData.value.id;
+    
     let payload = {
       data: {
         type: editTransactionData.value.type,
         amount: editTransactionData.value.amount,
-        status: editTransactionData.value.status,
+        stat: editTransactionData.value.stat,
       },
     };
     
-    const res = await $fetch(`http://localhost:1337/api/transactions/${editTransactionData.value.id}`, {
+    const res = await $fetch(`${config.public.baseUrl}/api/transactions/${transactionId}`, {
       method: "PUT",
       body: payload,
     });
@@ -237,13 +250,15 @@ const updateTransaction = async () => {
   }
 };
 
-// DELETE TRANSACTION
+// DELETE TRANSACTION - UPDATED
 const deleteTransaction = async (transaction) => {
   if (!confirm(`Delete this transaction?`)) return;
   
   try {
+    const transactionId = transaction.documentId || transaction.id;
+    
     const res = await $fetch(
-      `http://localhost:1337/api/transactions/${transaction.id}`,
+      `${config.public.baseUrl}/api/transactions/${transactionId}`,
       {
         method: "DELETE",
       }
@@ -261,7 +276,7 @@ const deleteTransaction = async (transaction) => {
 const resetCreateForm = () => {
   transactionType.value = "sale";
   transactionAmount.value = "";
-  transactionStatus.value = "pending";
+  transactionStat.value = "pending";
   if (createForm.value) {
     createForm.value.reset();
   }

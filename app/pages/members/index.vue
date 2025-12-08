@@ -100,6 +100,8 @@
 </template>
 
 <script setup>
+const config = useRuntimeConfig();
+
 const members = ref([]);
 const loading = ref(false);
 const creating = ref(false);
@@ -133,13 +135,21 @@ const headers = [
   { title: "Actions", key: "actions", sortable: false },
 ];
 
-// GET ALL MEMBERS
+// GET ALL MEMBERS - UPDATED
 const getMembers = async () => {
   loading.value = true;
   try {
-    const res = await $fetch("http://localhost:1337/api/members");
-    if (res) {
-      members.value = res.data;
+    const res = await $fetch(`${config.public.baseUrl}/api/members`);
+    if (res && res.data) {
+      // Transform Strapi response to flat objects
+      members.value = res.data.map(member => ({
+        id: member.id,
+        documentId: member.documentId,
+        name: member.name,
+        email: member.email,
+        role: member.role,
+        createdAt: member.createdAt
+      }));
     }
   } catch (err) {
     console.log("Error fetching members:", err);
@@ -166,7 +176,7 @@ const createMember = async () => {
       },
     };
     
-    const res = await $fetch("http://localhost:1337/api/members", {
+    const res = await $fetch(`${config.public.baseUrl}/api/members`, {
       method: "POST",
       body: payload,
     });
@@ -196,7 +206,7 @@ const editMember = (member) => {
   editMemberDialog.value = true;
 };
 
-// UPDATE MEMBER
+// UPDATE MEMBER - UPDATED
 const updateMember = async () => {
   if (!editForm.value) return;
   
@@ -205,6 +215,8 @@ const updateMember = async () => {
   
   updating.value = true;
   try {
+    const memberId = editMemberData.value.documentId || editMemberData.value.id;
+    
     let payload = {
       data: {
         name: editMemberData.value.name,
@@ -213,7 +225,7 @@ const updateMember = async () => {
       },
     };
     
-    const res = await $fetch(`http://localhost:1337/api/members/${editMemberData.value.id}`, {
+    const res = await $fetch(`${config.public.baseUrl}/api/members/${memberId}`, {
       method: "PUT",
       body: payload,
     });
@@ -230,13 +242,15 @@ const updateMember = async () => {
   }
 };
 
-// DELETE MEMBER
+// DELETE MEMBER - UPDATED
 const deleteMember = async (member) => {
   if (!confirm(`Delete ${member.name}?`)) return;
   
   try {
+    const memberId = member.documentId || member.id;
+    
     const res = await $fetch(
-      `http://localhost:1337/api/members/${member.id}`,
+      `${config.public.baseUrl}/api/members/${memberId}`,
       {
         method: "DELETE",
       }
